@@ -1,0 +1,210 @@
+/**
+ * 简历页面共享样式（模板无关的语义类 rr-*）
+ *
+ * 设计原则：
+ *   - 不使用 tailwind 类、不用 scoped，避免与 UI 层互相污染，
+ *     保证打印克隆与 html2canvas 截图样式自洽
+ *   - 全部度量来自 .rr-page 上注入的 CSS 变量（见 templates/shared/metrics.js）
+ *   - 单位用 pt，与 RR 的 react-pdf 度量一致，屏幕/打印一致
+ *   - 各模板的风格差异在模板组件内以 .rr-tpl-<name> 前缀覆盖
+ */
+
+/* ══════════ 页面容器 ══════════ */
+
+.rr-page {
+  /* 默认中文字体栈（typography.fontFamily 为空时使用） */
+  --rr-default-font: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI',
+    'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif;
+
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--rr-margin-y) var(--rr-margin-x);
+  background: var(--rr-bg);
+  color: var(--rr-text);
+  font-family: var(--rr-body-font);
+  font-size: var(--rr-body-size);
+  font-weight: var(--rr-body-weight);
+  line-height: var(--rr-body-lh);
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--rr-section-gap);
+  overflow: hidden; /* a4/letter 固定页高，溢出裁切（与 RR 用户心智一致：手动分页） */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* 页面格式 */
+.rr-page.rr-fmt-letter { width: 216mm; min-height: 279mm; }
+.rr-page.rr-fmt-free-form { min-height: auto; overflow: visible; height: auto; }
+
+/* ══════════ 区块结构 ══════════ */
+
+.rr-section-group {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--rr-section-gap);
+}
+
+.rr-section {
+  display: flex;
+  flex-direction: column;
+  row-gap: calc(var(--rr-gap-y) * 0.25);
+}
+
+.rr-section-heading {
+  display: flex;
+  align-items: center;
+  column-gap: 4pt;
+  margin: 0;
+  font-family: var(--rr-heading-font);
+  font-size: var(--rr-heading-size);
+  font-weight: var(--rr-heading-weight);
+  line-height: var(--rr-heading-lh);
+  color: var(--rr-text);
+}
+
+.rr-section-heading-icon { color: var(--rr-primary); }
+
+.rr-items {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--rr-gap-y);
+  gap: var(--rr-gap-y) var(--rr-gap-x); /* grid 多列时的双向间距 */
+}
+
+.rr-item {
+  display: flex;
+  flex-direction: column;
+  row-gap: calc(var(--rr-gap-y) * 0.125);
+  min-width: 0;
+}
+
+/* ══════════ 行布局 ══════════ */
+
+.rr-split-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  column-gap: calc(var(--rr-gap-x) * 0.667);
+}
+
+.rr-align-end { text-align: right; }
+
+.rr-inline {
+  display: flex;
+  align-items: center;
+  column-gap: calc(var(--rr-gap-x) * 0.333);
+}
+
+/* ══════════ 文本与内联元素 ══════════ */
+
+.rr-bold { font-weight: var(--rr-bold-weight); }
+
+.rr-small { font-size: calc(var(--rr-body-size) * 0.875); }
+
+.rr-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
+}
+
+.rr-page.rr-hide-underline .rr-link,
+.rr-page.rr-hide-underline .rr-rich a { text-decoration: none; }
+
+.rr-icon {
+  color: var(--rr-primary);
+  font-size: var(--rr-body-size);
+  flex-shrink: 0;
+}
+
+.rr-page.rr-hide-icons .rr-icon { display: none; }
+
+.rr-contact-item {
+  display: inline-flex;
+  align-items: center;
+  column-gap: calc(var(--rr-gap-x) * 0.167);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ══════════ 富文本 ══════════ */
+
+.rr-rich p { margin: 0; }
+.rr-rich p + p { margin-top: calc(var(--rr-gap-y) * 0.25); }
+
+.rr-rich ul,
+.rr-rich ol {
+  margin: calc(var(--rr-gap-y) * 0.25) 0 0;
+  padding-left: calc(var(--rr-body-size) * 1.3);
+}
+
+.rr-rich ul { list-style: disc; }
+.rr-rich ol { list-style: decimal; }
+
+.rr-rich li { margin-bottom: calc(var(--rr-gap-y) * 0.125); }
+.rr-rich li p { margin: 0; }
+
+.rr-rich a { color: inherit; text-decoration: underline; }
+
+.rr-rich mark {
+  background: color-mix(in srgb, var(--rr-primary) 22%, transparent);
+  color: inherit;
+  padding: 0 1pt;
+}
+
+.rr-rich code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 3pt;
+  border-radius: 2pt;
+}
+
+/* ══════════ 等级显示 ══════════ */
+
+.rr-level {
+  display: flex;
+  align-items: center;
+  margin-top: 2pt;
+  column-gap: calc(var(--rr-gap-x) * 0.333);
+  width: 100%;
+}
+
+.rr-level-progress-bar { column-gap: 0; }
+.rr-level-rectangle-full { column-gap: calc(var(--rr-gap-x) * 0.5); }
+
+.rr-level-item {
+  --rr-level-size: calc(var(--rr-body-size) * 0.65);
+  height: var(--rr-level-size);
+  width: var(--rr-level-size);
+  border: 0.75pt solid var(--rr-primary);
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.rr-level-item.active { background: var(--rr-primary); }
+
+.rr-level-circle .rr-level-item { border-radius: 999pt; }
+.rr-level-rectangle .rr-level-item { width: 16pt; }
+.rr-level-rectangle-full .rr-level-item { width: auto; flex: 1; }
+.rr-level-progress-bar .rr-level-item { flex: 1; width: auto; }
+
+.rr-level-icon {
+  color: var(--rr-primary);
+  font-size: var(--rr-body-size);
+}
+
+/* ══════════ 其他 ══════════ */
+
+.rr-item-website { font-size: calc(var(--rr-body-size) * 0.875); }
+
+.rr-name {
+  margin: 0;
+  font-family: var(--rr-heading-font);
+  font-size: calc(var(--rr-heading-size) * 1.5);
+  font-weight: var(--rr-heading-weight);
+  line-height: 1.2;
+}

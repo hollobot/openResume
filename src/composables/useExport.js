@@ -25,6 +25,13 @@ export function exportMarkdown(markdownContent, filename = 'resume.md') {
 }
 
 /**
+ * 导出简历数据为 JSON 文件（用于备份与迁移）
+ */
+export function exportJSON(jsonString, filename = 'resume.json') {
+  downloadText(jsonString, filename)
+}
+
+/**
  * 导出为 PDF（调用浏览器打印，用户选"另存为 PDF"）
  * 打印前临时切换 body 为仅显示预览区域
  */
