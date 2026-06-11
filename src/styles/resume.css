@@ -1,0 +1,228 @@
+/**
+ * 简历渲染样式 - 默认模板
+ * 使用 CSS 变量 --accent-color 驱动主题色（来自 frontmatter 的 color 字段）
+ */
+
+.resume-page {
+  --accent-color: #4a90d9;
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a5568;
+  --text-light: #718096;
+  --border-color: #e2e8f0;
+  --bg-white: #ffffff;
+  --bg-light: #f8fafc;
+
+  width: 210mm;          /* A4 宽度 */
+  min-height: 297mm;     /* A4 高度 */
+  margin: 0 auto;
+  padding: 14mm 16mm;
+  background: var(--bg-white);
+  color: var(--text-primary);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif;
+  font-size: 10pt;
+  line-height: 1.6;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ── 头部区域 ── */
+
+.resume-header {
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.resume-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.resume-header-info {
+  flex: 1;
+}
+
+.resume-name {
+  font-size: 22pt;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.resume-title {
+  font-size: 11pt;
+  color: var(--accent-color);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.resume-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 8px;
+}
+
+.contact-item {
+  font-size: 9pt;
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contact-item:hover {
+  color: var(--accent-color);
+}
+
+.resume-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+/* ── 区块标题 (## 二级标题) ── */
+
+.resume-section-title {
+  display: flex;
+  align-items: center;
+  font-size: 11pt;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 14px 0 8px;
+  gap: 8px;
+}
+
+.resume-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: var(--accent-color);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.resume-section-title span {
+  border-bottom: 1px solid var(--border-color);
+  flex: 1;
+  padding-bottom: 4px;
+}
+
+/* ── 条目标题 (### 三级标题) ── */
+
+.resume-entry-title {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 8px 0 2px;
+}
+
+/* ── 段落 ── */
+
+.resume-paragraph {
+  font-size: 9.5pt;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+/* 斜体用于时间、地点等辅助信息 */
+.resume-paragraph em,
+em {
+  font-style: normal;
+  font-size: 9pt;
+  color: var(--text-light);
+}
+
+/* ── 列表 ── */
+
+.resume-list {
+  margin: 4px 0 8px 16px;
+  padding: 0;
+}
+
+.resume-list li {
+  font-size: 9.5pt;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  line-height: 1.5;
+}
+
+/* ── 技能标签 ── */
+
+.skill-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 3px;
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+  color: var(--accent-color);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+  border-radius: 12px;
+  font-size: 9pt;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+/* ── 分隔线 ── */
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+
+/* ── 链接 ── */
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+/* ── 粗体 ── */
+
+strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ── 打印样式 ── */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  /* 只打印预览区域 */
+  .resume-print-area,
+  .resume-print-area * {
+    visibility: visible;
+  }
+
+  .resume-print-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .resume-page {
+    box-shadow: none;
+    margin: 0;
+    width: 100%;
+    min-height: auto;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
