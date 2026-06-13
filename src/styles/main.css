@@ -1,0 +1,22 @@
+/* 全局重置与基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  color: #2c3e50;
+  background: #f5f6f8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 简历模板主题（theme-default.css）在 main.js 中单独引入，
+   避免 CSS @import 必须置顶的限制导致样式被忽略。 */

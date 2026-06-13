@@ -1,0 +1,152 @@
+/**
+ * 默认简历模板主题（简约黑白风，对照木及简历参考图）
+ *
+ * 设计原则：
+ *  - 单色：所有文字统一用近黑色，靠字号 / 字重区分层级，简洁清晰。
+ *  - 对齐：姓名、区块标题、正文左边缘严格对齐；标题色条放到左侧留白区，不挤压文字。
+ *  - 变量：主色 / 文字色收敛为 CSS 变量，方便整体调整与后续扩展主题。
+ */
+.resume-theme-default {
+  --rt-ink: #1a1a1a; /* 主文字（近黑） */
+  --rt-ink-sub: #333333; /* 次要文字：联系方式 / 日期（仍为黑系） */
+  --rt-border: #e3e6eb; /* 分隔线 */
+
+  /* 页边距由 .page 提供，这里不再设 padding */
+  color: var(--rt-ink);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+/* ===== 头部：姓名 + 联系方式（左） / 证件照（右） ===== */
+
+/* 姓名（一级标题）：左对齐大字 */
+.resume-theme-default h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--rt-ink);
+  text-align: left;
+  letter-spacing: 2px;
+  margin: 0 0 10px;
+}
+
+/* 左栏：姓名 + 联系方式 */
+.resume-theme-default .md-col--left {
+  float: left;
+  width: 72%;
+}
+/* 联系方式行 */
+.resume-theme-default .md-col--left p {
+  color: var(--rt-ink-sub);
+  font-size: 13px;
+  line-height: 1.9; /* 两行联系方式留出舒适间距 */
+  margin: 0;
+}
+
+/* 右栏：证件照浮动到右上角 */
+.resume-theme-default .md-col--right {
+  float: right;
+  width: 26%;
+  text-align: right;
+}
+.resume-theme-default .md-col--right img {
+  width: 92px;
+  height: 122px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* 清除浮动：头部结束后让下方区块正常排布 */
+.resume-theme-default .md-col-clear {
+  clear: both;
+}
+
+/* ===== 区块标题 ===== */
+
+/* 二级标题：粗体 + 整行底部分隔线；文字与姓名/正文严格左对齐（不加左侧色条，避免伸出错位） */
+.resume-theme-default h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rt-ink);
+  padding: 0 0 7px 0;
+  margin: 22px 0 12px;
+  border-bottom: 2px solid var(--rt-ink);
+}
+
+/* 三级标题（更细层级时使用） */
+.resume-theme-default h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rt-ink);
+  margin: 12px 0 4px;
+}
+
+/* ===== 正文与列表 ===== */
+.resume-theme-default p {
+  margin: 5px 0;
+}
+
+.resume-theme-default ul,
+.resume-theme-default ol {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.resume-theme-default ul {
+  list-style: none; /* 自定义更精致的小圆点项目符号 */
+}
+.resume-theme-default ul > li {
+  position: relative;
+  padding-left: 14px;
+}
+.resume-theme-default ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* 按行高把圆点垂直居中到首行（随行距自适应，不写死） */
+  top: calc(0.5lh - 2px);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--rt-ink);
+}
+.resume-theme-default li {
+  margin: 4px 0;
+}
+
+.resume-theme-default strong {
+  font-weight: 600;
+  color: var(--rt-ink);
+}
+
+/* 链接：单色无下划线，融入正文（简约） */
+.resume-theme-default a {
+  color: var(--rt-ink);
+  text-decoration: none;
+}
+
+/* ===== 行内自定义元素 ===== */
+
+/* 图标：与文字垂直居中对齐，单色 */
+.resume-theme-default .md-icon {
+  vertical-align: -0.15em;
+  margin-right: 4px;
+  color: var(--rt-ink-sub);
+}
+
+/* 右对齐内容（@r{...}）：浮动到行末，常用于条目日期 */
+.resume-theme-default .md-right {
+  float: right;
+  color: var(--rt-ink-sub);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* 配合 markdown-it-attrs 的常用工具类，如 `## 标题 {.center}` */
+.resume-theme-default .center {
+  text-align: center;
+}
+.resume-theme-default .right {
+  text-align: right;
+}
+.resume-theme-default .muted {
+  color: var(--rt-ink-sub);
+}

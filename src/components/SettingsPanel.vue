@@ -1,0 +1,330 @@
+<script setup>
+/**
+ * 设置侧边面板：从右侧滑出，调整简历预览的字体、行距，并支持自定义 CSS。
+ * 设置项绑定到共享状态 settings，改动实时生效并自动持久化。
+ *
+ * 自定义 CSS 说明：内容会被自动限定在简历预览内（见 App.vue 的注入逻辑），
+ * 因此直接写元素/类选择器即可，例如 `h2 { color:#c00 }`。
+ */
+import { ref } from 'vue'
+import { useResume } from '../composables/useResume.js'
+
+defineProps({
+  open: { type: Boolean, default: false }
+})
+const emit = defineEmits(['close'])
+
+const { settings, resetSettings, resetAvatarPos } = useResume()
+
+// 证件照显示尺寸（与预览一致）；裁剪输出用 2 倍分辨率保证清晰
+const AVATAR_W = 92
+const AVATAR_H = 122
+
+const avatarInput = ref(null)
+function triggerAvatar() {
+  avatarInput.value && avatarInput.value.click()
+}
+
+/**
+ * 把上传图片按证件照比例「裁剪填充」（cover）后输出 dataURL。
+ * 这样存下来的图本身就是 92:122 比例，预览与导出（html2canvas 不支持 object-fit）都不会变形。
+ */
+function cropToAvatar(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const ratio = AVATAR_W / AVATAR_H
+      const canvas = document.createElement('canvas')
+      canvas.width = AVATAR_W * 2
+      canvas.height = AVATAR_H * 2
+      const ctx = canvas.getContext('2d')
+      // 以中心 cover 方式取源图区域
+      const srcRatio = img.width / img.height
+      let sw, sh, sx, sy
+      if (srcRatio > ratio) {
+        sh = img.height
+        sw = sh * ratio
+        sx = (img.width - sw) / 2
+        sy = 0
+      } else {
+        sw = img.width
+        sh = sw / ratio
+        sx = 0
+        sy = (img.height - sh) / 2
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.92))
+    }
+    img.onerror = () => resolve(dataUrl) // 解码失败则保留原图
+    img.src = dataUrl
+  })
+}
+
+function onAvatarChange(e) {
+  const file = e.target.files && e.target.files[0]
+  e.target.value = '' // 允许重复选择同一文件
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = async () => {
+    settings.avatar = await cropToAvatar(String(reader.result))
+  }
+  reader.readAsDataURL(file)
+}
+function clearAvatar() {
+  settings.avatar = ''
+}
+
+// 可选字体：值为 CSS font-family，标签为展示名
+const FONT_OPTIONS = [
+  { label: '模板默认', value: '' },
+  { label: '微软雅黑', value: '"Microsoft YaHei", sans-serif' },
+  { label: '宋体', value: 'SimSun, "Songti SC", serif' },
+  { label: '黑体', value: 'SimHei, "Heiti SC", sans-serif' },
+  { label: '楷体', value: 'KaiTi, "Kaiti SC", serif' },
+  { label: '思源黑体 / 系统无衬线', value: '"Source Han Sans SC", system-ui, sans-serif' }
+]
+</script>
+
+<template>
+  <!-- 遮罩层：点击关闭 -->
+  <transition name="fade">
+    <div v-if="open" class="settings-overlay" @click="emit('close')"></div>
+  </transition>
+
+  <!-- 抽屉面板 -->
+  <transition name="slide">
+    <aside v-if="open" class="settings-panel">
+      <header class="settings-header">
+        <span>样式设置</span>
+        <button class="close-btn" @click="emit('close')" aria-label="关闭">×</button>
+      </header>
+
+      <div class="settings-body">
+        <!-- 证件照 -->
+        <div class="field">
+          <label class="field-label">证件照</label>
+          <div class="avatar-row">
+            <img v-if="settings.avatar" :src="settings.avatar" class="avatar-preview" alt="证件照" />
+            <div v-else class="avatar-empty">未上传</div>
+            <div class="avatar-actions">
+              <button class="mini-btn" @click="triggerAvatar">上传</button>
+              <button v-if="settings.avatar" class="mini-btn" @click="resetAvatarPos">
+                重置位置
+              </button>
+              <button v-if="settings.avatar" class="mini-btn" @click="clearAvatar">
+                清除
+              </button>
+            </div>
+          </div>
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="onAvatarChange"
+          />
+          <p class="field-hint">上传后可在右侧预览直接拖动照片到任意位置，导出 PNG / PDF 会一并贴上</p>
+        </div>
+
+        <!-- 字体 -->
+        <div class="field">
+          <label class="field-label">字体</label>
+          <select v-model="settings.fontFamily" class="field-control">
+            <option v-for="f in FONT_OPTIONS" :key="f.label" :value="f.value">
+              {{ f.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- 行距 -->
+        <div class="field">
+          <label class="field-label">行距：{{ settings.lineHeight.toFixed(2) }}</label>
+          <input
+            v-model.number="settings.lineHeight"
+            type="range"
+            min="1.2"
+            max="2.4"
+            step="0.05"
+            class="field-control"
+          />
+        </div>
+
+        <!-- 自定义 CSS -->
+        <div class="field">
+          <label class="field-label">自定义 CSS（作用于简历预览）</label>
+          <textarea
+            v-model="settings.customCss"
+            class="field-control css-editor"
+            spellcheck="false"
+            placeholder="例如：&#10;h2 { color: #c0392b; }&#10;p { letter-spacing: 0.5px; }"
+          ></textarea>
+        </div>
+
+        <button class="reset-btn" @click="resetSettings">恢复默认设置</button>
+      </div>
+    </aside>
+  </transition>
+</template>
+
+<style scoped>
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1500;
+}
+.settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.12);
+  z-index: 1600;
+  display: flex;
+  flex-direction: column;
+}
+.settings-header {
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.close-btn {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+}
+.close-btn:hover {
+  color: #111827;
+}
+.settings-body {
+  flex: 1;
+  overflow: auto;
+  padding: 18px;
+}
+.field {
+  margin-bottom: 20px;
+}
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+.field-control {
+  width: 100%;
+  box-sizing: border-box;
+}
+select.field-control {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.css-editor {
+  height: 180px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: vertical;
+}
+/* 证件照上传 */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.avatar-preview,
+.avatar-empty {
+  width: 60px;
+  height: 80px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.avatar-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #9aa0a6;
+  background: #f7f8fa;
+}
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mini-btn {
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+.mini-btn:hover {
+  background: #f3f4f6;
+}
+.field-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #9aa0a6;
+}
+.field-hint code {
+  background: #f3f4f6;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+
+.reset-btn {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+}
+.reset-btn:hover {
+  background: #f3f4f6;
+}
+
+/* 动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.25s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(100%);
+}
+</style>
