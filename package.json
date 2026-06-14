@@ -17,7 +17,6 @@
     "codemirror": "^6.0.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
-    "lucide": "^1.18.0",
     "markdown-it": "^14.1.0",
     "markdown-it-attrs": "^5.0.0",
     "markdown-it-container": "^4.0.0",

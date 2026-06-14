@@ -4,11 +4,13 @@
  * 自身只负责触发交互，具体导入导出逻辑由父组件（App）处理。
  */
 import { ref, onMounted, onUnmounted } from 'vue'
+import ResumeSwitcher from './ResumeSwitcher.vue'
 
 const emit = defineEmits([
   'import-file',
   'export-pdf',
   'export-png',
+  'export-html',
   'export-md',
   'export-json',
   'reset',
@@ -38,6 +40,7 @@ const exportOpen = ref(false)
 const EXPORT_ITEMS = [
   { label: '导出 PDF', event: 'export-pdf' },
   { label: '导出 PNG', event: 'export-png' },
+  { label: '导出 HTML', event: 'export-html' },
   { label: '导出 Markdown', event: 'export-md' },
   { label: '导出 JSON', event: 'export-json' }
 ]
@@ -55,7 +58,10 @@ onUnmounted(() => document.removeEventListener('click', closeExport))
 
 <template>
   <header class="toolbar">
-    <div class="toolbar-brand">OpenResume</div>
+    <div class="toolbar-left">
+      <div class="toolbar-brand">OpenResume</div>
+      <ResumeSwitcher />
+    </div>
 
     <div class="toolbar-actions">
       <button class="btn" @click="emit('save')">保存</button>
@@ -104,6 +110,11 @@ onUnmounted(() => document.removeEventListener('click', closeExport))
   padding: 0 20px;
   background: #1f2937;
   color: #fff;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 .toolbar-brand {
   font-size: 18px;

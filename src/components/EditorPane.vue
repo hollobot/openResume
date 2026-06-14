@@ -9,6 +9,7 @@ import { basicSetup } from 'codemirror'
 import { markdown as markdownLang } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'
 import { useResume } from '../composables/useResume.js'
+import EditorToolbar from './EditorToolbar.vue'
 
 const { markdown: content, setEditorView } = useResume()
 
@@ -23,6 +24,7 @@ function onReady(payload) {
 
 <template>
   <section class="editor-pane">
+    <EditorToolbar />
     <Codemirror
       v-model="content"
       :extensions="extensions"
@@ -40,13 +42,16 @@ function onReady(payload) {
 .editor-pane {
   height: 100%;
   background: #fff;
+  display: flex;
+  flex-direction: column;
 }
-/* 让 CodeMirror 填满编辑区并设定等宽字体 */
-.editor-cm {
-  height: 100%;
-}
+/* vue-codemirror 根节点是 display:contents（自身无盒子），flex 不会作用其上，
+   真正参与 .editor-pane 弹性布局的是 .cm-editor —— 让它按 flex:1 填满工具栏以外的
+   剩余空间并内部滚动（原先 height:100% 会等于整个编辑区高度，叠加工具栏后溢出，
+   把整个窗口顶出滚动条）。 */
 :deep(.cm-editor) {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 :deep(.cm-scroller) {
   font-family: 'Consolas', 'Menlo', 'Courier New', monospace;

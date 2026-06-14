@@ -9,6 +9,13 @@
 import { ref } from 'vue'
 import { useResume } from '../composables/useResume.js'
 import AvatarCropper from './AvatarCropper.vue'
+import { AVATAR_SHAPES } from '../utils/avatar.js'
+
+// 证件照形状/比例选项
+const AVATAR_SHAPE_OPTIONS = Object.entries(AVATAR_SHAPES).map(([value, g]) => ({
+  value,
+  label: g.label
+}))
 
 defineProps({
   open: { type: Boolean, default: false }
@@ -61,6 +68,13 @@ const FONT_OPTIONS = [
   { label: '楷体', value: 'KaiTi, "Kaiti SC", serif' },
   { label: '思源黑体 / 系统无衬线', value: '"Source Han Sans SC", system-ui, sans-serif' }
 ]
+
+// 简历模板
+const TEMPLATE_OPTIONS = [
+  { label: '经典黑白', value: 'default' },
+  { label: '蓝色商务', value: 'blue' },
+  { label: '紧凑（省空间）', value: 'compact' }
+]
 </script>
 
 <template>
@@ -112,6 +126,47 @@ const FONT_OPTIONS = [
           @cancel="onCropCancel"
         />
 
+        <!-- 证件照样式：形状/比例 + 描边 -->
+        <div class="field">
+          <label class="field-label">证件照样式</label>
+          <select v-model="settings.avatarShape" class="field-control">
+            <option v-for="o in AVATAR_SHAPE_OPTIONS" :key="o.value" :value="o.value">
+              {{ o.label }}
+            </option>
+          </select>
+          <label class="field-label" style="margin-top: 10px">
+            描边：{{ settings.avatarBorderWidth }}px
+          </label>
+          <div class="border-row">
+            <input
+              v-model.number="settings.avatarBorderWidth"
+              type="range"
+              min="0"
+              max="8"
+              step="1"
+              class="field-control"
+            />
+            <input
+              type="color"
+              class="border-color"
+              title="描边颜色"
+              :value="settings.avatarBorderColor"
+              @input="settings.avatarBorderColor = $event.target.value"
+            />
+          </div>
+          <p class="field-hint">形状/比例改变后，建议重新上传以获得最佳构图</p>
+        </div>
+
+        <!-- 模板 -->
+        <div class="field">
+          <label class="field-label">模板</label>
+          <select v-model="settings.template" class="field-control">
+            <option v-for="t in TEMPLATE_OPTIONS" :key="t.value" :value="t.value">
+              {{ t.label }}
+            </option>
+          </select>
+        </div>
+
         <!-- 字体 -->
         <div class="field">
           <label class="field-label">字体</label>
@@ -159,6 +214,19 @@ const FONT_OPTIONS = [
             step="2"
             class="field-control"
           />
+        </div>
+
+        <!-- 显示选项 -->
+        <div class="field">
+          <label class="field-label">显示选项</label>
+          <label class="check-row">
+            <input type="checkbox" v-model="settings.themeColorExtended" />
+            <span>主题色也用于姓名 / 圆点 / 图标 / 链接</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" v-model="settings.linkUnderline" />
+            <span>链接显示下划线</span>
+          </label>
         </div>
 
         <!-- 自定义 CSS -->
@@ -295,6 +363,35 @@ select.field-control {
 }
 .mini-btn:hover {
   background: #f3f4f6;
+}
+/* 证件照描边行 */
+.border-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.border-color {
+  width: 36px;
+  height: 28px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+/* 复选项 */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+.check-row input {
+  cursor: pointer;
 }
 .field-hint {
   margin: 8px 0 0;

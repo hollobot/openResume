@@ -6,17 +6,20 @@
  *
  * 用法：父组件传入 open / src（原图 dataURL），监听 confirm(dataUrl) 与 cancel。
  */
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { useResume } from '../composables/useResume.js'
+import { avatarGeom } from '../utils/avatar.js'
 
-// 证件照比例：3:4（高/宽≈1.33，观感更稳，不显细长）
-const RATIO_W = 3
-const RATIO_H = 4
-// 取景框在弹窗中的显示尺寸（保持同比例，放大以便操作）
+const { settings } = useResume()
+// 形状几何（比例 / 是否圆形）由设置决定
+const geom = computed(() => avatarGeom(settings.avatarShape))
+
+// 取景框显示尺寸：宽固定，高随比例
 const FRAME_W = 240
-const FRAME_H = Math.round((FRAME_W * RATIO_H) / RATIO_W) // 320
-// 输出分辨率：600×800（3:4 高分辨率，给放大/导出留足清晰度余量，体积仍可控）
+const frameH = computed(() => Math.round((FRAME_W * geom.value.h) / geom.value.w))
+// 输出分辨率：宽固定 600，高随比例（圆形按方形输出，显示时再裁成圆）
 const OUT_W = 600
-const OUT_H = 800
+const outH = computed(() => Math.round((OUT_W * geom.value.h) / geom.value.w))
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -41,7 +44,7 @@ function dispH() {
 // 把偏移限制在「图片始终盖满取景框」的范围内
 function clampOffset(x, y) {
   const minX = FRAME_W - dispW()
-  const minY = FRAME_H - dispH()
+  const minY = frameH.value - dispH()
   return {
     x: Math.min(0, Math.max(minX, x)),
     y: Math.min(0, Math.max(minY, y))
@@ -54,17 +57,15 @@ function loadImage(src) {
   const img = new Image()
   img.onload = () => {
     nat.value = { w: img.naturalWidth, h: img.naturalHeight }
-    coverScale.value = Math.max(FRAME_W / img.naturalWidth, FRAME_H / img.naturalHeight)
+    coverScale.value = Math.max(FRAME_W / img.naturalWidth, frameH.value / img.naturalHeight)
     // 居中显示
-    offset.value = clampOffset(
-      (FRAME_W - dispW()) / 2,
-      (FRAME_H - dispH()) / 2
-    )
+    offset.value = clampOffset((FRAME_W - dispW()) / 2, (frameH.value - dispH()) / 2)
   }
   img.src = src
 }
+// 打开 / 换图 / 改比例时重新载入并居中
 watch(
-  () => [props.open, props.src],
+  () => [props.open, props.src, frameH.value],
   () => {
     if (props.open) loadImage(props.src)
   },
@@ -100,16 +101,16 @@ function confirm() {
   const sx = -offset.value.x / s
   const sy = -offset.value.y / s
   const sw = FRAME_W / s
-  const sh = FRAME_H / s
+  const sh = frameH.value / s
 
   const img = new Image()
   img.onload = () => {
     const canvas = document.createElement('canvas')
     canvas.width = OUT_W
-    canvas.height = OUT_H
+    canvas.height = outH.value
     const ctx = canvas.getContext('2d')
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H)
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, outH.value)
     emit('confirm', canvas.toDataURL('image/jpeg', 0.92))
   }
   img.src = props.src
@@ -126,10 +127,11 @@ function confirm() {
         </header>
 
         <div class="cropper-body">
-          <!-- 固定比例取景框：原图绝对定位，仅可拖动 -->
+          <!-- 固定比例取景框：原图绝对定位，仅可拖动；圆形时圆形遮罩 -->
           <div
             class="cropper-frame"
-            :style="{ width: FRAME_W + 'px', height: FRAME_H + 'px' }"
+            :class="{ round: geom.round }"
+            :style="{ width: FRAME_W + 'px', height: frameH + 'px' }"
             @mousedown.prevent="onDragStart"
           >
             <img
@@ -211,6 +213,9 @@ function confirm() {
   background: #f0f1f3;
   cursor: grab;
   box-shadow: 0 0 0 1px #e5e7eb inset;
+}
+.cropper-frame.round {
+  border-radius: 50%; /* 圆形取景预览 */
 }
 .cropper-frame:active {
   cursor: grabbing;

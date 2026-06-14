@@ -19,10 +19,17 @@ import {
   exportPNG,
   exportPDF
 } from './utils/exporters.js'
+import { exportHtml } from './utils/exportHtml.js'
 import { importFile } from './utils/importers.js'
 
-const { markdown, settings, setMarkdown, resetToSample, saveNow } = useResume()
+const { markdown, settings, currentName, setMarkdown, resetToSample, saveNow } = useResume()
 const { show } = useToast()
+
+// 用当前简历名做导出文件名；清理文件名非法字符，空则回退 resume
+function exportName(ext) {
+  const base = (currentName.value || '').replace(/[\\/:*?"<>|]/g, '').trim() || 'resume'
+  return `${base}.${ext}`
+}
 
 // 预览组件引用，用于获取待导出的 DOM 元素
 const previewRef = ref(null)
@@ -71,20 +78,23 @@ watch(() => settings.customCss, applyCustomCss, { immediate: true })
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-// —— 导出 ——
+// —— 导出（文件名用当前简历名）——
 function onExportPdf() {
   const pages = getPages()
-  if (pages.length) exportPDF(pages)
+  if (pages.length) exportPDF(pages, exportName('pdf'))
 }
 function onExportPng() {
   const pages = getPages()
-  if (pages.length) exportPNG(pages)
+  if (pages.length) exportPNG(pages, exportName('png'))
+}
+function onExportHtml() {
+  exportHtml(markdown.value, settings, exportName('html'))
 }
 function onExportMd() {
-  exportMarkdown(markdown.value)
+  exportMarkdown(markdown.value, exportName('md'))
 }
 function onExportJson() {
-  exportJSON(markdown.value)
+  exportJSON(markdown.value, exportName('json'))
 }
 
 // —— 导入 ——
@@ -116,6 +126,7 @@ function onReset() {
       @import-file="onImportFile"
       @export-pdf="onExportPdf"
       @export-png="onExportPng"
+      @export-html="onExportHtml"
       @export-md="onExportMd"
       @export-json="onExportJson"
       @reset="onReset"

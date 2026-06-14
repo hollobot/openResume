@@ -135,11 +135,11 @@
    适合罗列技术栈。用 :not(pre) 排除代码块，仅作用于行内代码。 */
 .resume-theme-default :not(pre) > code {
   display: inline-block;
-  /* line-height:1 + 上下对称 padding 决定胶囊高度：
-     避免 line-height 的半行距——html2canvas 渲染带行距的文字会上偏，
-     导致导出 PDF 里文字不居中；收紧行距后预览与导出一致、文字垂直居中。 */
+  /* line-height:1 收紧行距，胶囊高度由上下 padding 决定。
+     html2canvas 在导出里会把文字略微下移，故上 padding 略小于下 padding，
+     把文字往上提一点来抵消（导出里居中）。数值经验性微调。 */
   line-height: 1;
-  padding: 4px 8px;
+  padding: 2px 8px 6px;
   margin: 2px 3px 2px 0;
   font-family: inherit; /* 用正文字体，标签观感（非等宽代码风） */
   font-size: 12.5px;
@@ -155,6 +155,72 @@
   color: var(--rt-ink);
   text-decoration: none;
   cursor: pointer;
+}
+
+/* ===== 可选项（由设置开关注入对应类名）===== */
+
+/* 主题色扩展：把主题色也用到姓名 / 圆点 / 图标 / 链接（默认仅区块标题） */
+.resume-theme-default.accent-extended h1,
+.resume-theme-default.accent-extended .md-icon,
+.resume-theme-default.accent-extended a {
+  color: var(--rt-accent);
+}
+.resume-theme-default.accent-extended ul > li::before {
+  background: var(--rt-accent);
+}
+
+/* 链接下划线（默认无下划线） */
+.resume-theme-default.link-underline a {
+  text-decoration: underline;
+}
+
+/* ===== 模板（在基础模板上叠加修饰类，仅覆盖变量/少量规则）===== */
+
+/* 蓝色商务：主题色默认蓝，并把蓝色用到姓名/圆点/图标/链接，标题与下划线随主题色 */
+.resume-theme-default.tpl-blue {
+  --rt-accent: #2563eb; /* 默认蓝；用户在「主题色」里仍可改 */
+}
+.resume-theme-default.tpl-blue h1,
+.resume-theme-default.tpl-blue .md-icon,
+.resume-theme-default.tpl-blue a {
+  color: var(--rt-accent);
+}
+.resume-theme-default.tpl-blue ul > li::before {
+  background: var(--rt-accent);
+}
+
+/* 紧凑：更小字号 + 更紧的间距，适合内容多、想压到一页 */
+.resume-theme-default.tpl-compact {
+  font-size: 12.5px;
+}
+.resume-theme-default.tpl-compact h1 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+.resume-theme-default.tpl-compact h2 {
+  font-size: 15px;
+  margin: 14px 0 8px;
+  padding-bottom: 5px;
+}
+.resume-theme-default.tpl-compact h3 {
+  margin: 8px 0 3px;
+}
+.resume-theme-default.tpl-compact p {
+  margin: 3px 0;
+}
+.resume-theme-default.tpl-compact li {
+  margin: 2px 0;
+}
+.resume-theme-default.tpl-compact ul,
+.resume-theme-default.tpl-compact ol {
+  margin: 4px 0;
+}
+
+/* 手动分页标记：不可见、零高度；分页计算据此强制另起一页 */
+.resume-theme-default .page-break {
+  display: block;
+  height: 0;
+  overflow: hidden;
 }
 
 /* ===== 行内自定义元素 ===== */

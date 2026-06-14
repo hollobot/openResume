@@ -9,6 +9,7 @@ import { computed, ref, watch, nextTick, onUnmounted } from 'vue'
 import { useResume } from '../composables/useResume.js'
 import { renderMarkdown } from '../markdown/index.js'
 import { paginate } from '../utils/paginate.js'
+import { avatarGeom, AVATAR_BASE_W } from '../utils/avatar.js'
 
 const { markdown, settings } = useResume()
 
@@ -22,9 +23,9 @@ const padH = computed(() => settings.pagePadH)
 const CONTENT_W = computed(() => PAGE_W - padH.value * 2)
 const CONTENT_H = computed(() => PAGE_H - padV.value * 2)
 
-// 证件照基准尺寸（3:4 比例）；实际显示尺寸 = 基准 × 缩放系数
-const AVATAR_W = 90
-const AVATAR_H = 120
+// 证件照形状几何（比例 / 是否圆形）；基准宽度固定，基准高度随比例变化
+const geom = computed(() => avatarGeom(settings.avatarShape))
+const avatarBaseH = computed(() => Math.round((AVATAR_BASE_W * geom.value.h) / geom.value.w))
 
 // 页面堆叠容器引用（导出时从中取各页元素）
 const pagesEl = ref(null)
@@ -40,6 +41,17 @@ watch(markdown, (val) => {
 })
 
 const html = computed(() => renderMarkdown(debouncedMd.value))
+
+// 当前模板修饰类（default 用基础模板、不加修饰类）
+const templateClass = computed(() =>
+  settings.template && settings.template !== 'default' ? `tpl-${settings.template}` : ''
+)
+
+// 统计：页数 + 字数（按渲染后可见文本去标签去空白计）
+const stats = computed(() => ({
+  pages: pages.value.length,
+  chars: html.value.replace(/<[^>]+>/g, '').replace(/\s+/g, '').length
+}))
 
 // 字体 / 行距 / 主题色实时作用于每页内容
 const contentStyle = computed(() => ({
@@ -60,15 +72,17 @@ function repaginate() {
   pages.value = paginate(html.value, {
     contentWidth: CONTENT_W.value,
     contentHeight: CONTENT_H.value,
-    themeClass: 'resume-theme-default',
+    // 把模板修饰类一并交给离屏测量容器，保证分页高度与所选模板一致
+    themeClass: ('resume-theme-default ' + templateClass.value).trim(),
     fontFamily: settings.fontFamily,
     lineHeight: settings.lineHeight
   })
 }
-// 内容 / 字体 / 行距 / 页边距 / 自定义 CSS 变化都会影响排版高度，需重新分页
+// 内容 / 字体 / 行距 / 模板 / 页边距 / 自定义 CSS 变化都会影响排版高度，需重新分页
 watch(
   [
     html,
+    () => settings.template,
     () => settings.fontFamily,
     () => settings.lineHeight,
     () => settings.customCss,
@@ -88,8 +102,16 @@ const SCALE_MAX = 3
 const avatarSelected = ref(false)
 
 // 当前显示尺寸（基准 × 缩放系数）
-const avatarW = computed(() => AVATAR_W * settings.avatarScale)
-const avatarH = computed(() => AVATAR_H * settings.avatarScale)
+const avatarW = computed(() => AVATAR_BASE_W * settings.avatarScale)
+const avatarH = computed(() => avatarBaseH.value * settings.avatarScale)
+
+// 证件照图片样式：圆形 / 圆角 + 可选描边
+const avatarImgStyle = computed(() => ({
+  borderRadius: geom.value.round ? '50%' : '4px',
+  border: settings.avatarBorderWidth
+    ? `${settings.avatarBorderWidth}px solid ${settings.avatarBorderColor}`
+    : 'none'
+}))
 
 // 证件照外框样式：位置 + 尺寸
 const avatarStyle = computed(() => ({
@@ -197,8 +219,8 @@ function onResizeMove(e) {
   settings.avatarScale = scale
 
   // 由锚点反推左上角，保证锚点不动
-  const newW = AVATAR_W * scale
-  const newH = AVATAR_H * scale
+  const newW = AVATAR_BASE_W * scale
+  const newH = avatarBaseH.value * scale
   const p = clampPos(resize.anchorX - resize.afx * newW, resize.anchorY - resize.afy * newH)
   settings.avatarPos.x = p.x
   settings.avatarPos.y = p.y
@@ -224,11 +246,19 @@ defineExpose({
 <template>
   <!-- 点击空白处取消证件照选中 -->
   <section class="preview-pane" @mousedown="onBackgroundMouseDown">
-    <div ref="pagesEl" class="pages">
-      <!-- 每一页都是一张 A4 纸（页边距来自设置，与分页计算一致） -->
-      <div v-for="(pageHtml, i) in pages" :key="i" class="page" :style="pageStyle">
+    <div class="pages-scroll">
+      <div ref="pagesEl" class="pages">
+        <!-- 每一页都是一张 A4 纸（页边距来自设置，与分页计算一致） -->
+        <div v-for="(pageHtml, i) in pages" :key="i" class="page" :style="pageStyle">
         <div
           class="resume-theme-default page-content"
+          :class="[
+            templateClass,
+            {
+              'accent-extended': settings.themeColorExtended,
+              'link-underline': settings.linkUnderline
+            }
+          ]"
           :style="contentStyle"
           v-html="pageHtml"
         ></div>
@@ -240,7 +270,13 @@ defineExpose({
           :style="avatarStyle"
           @mousedown.prevent.stop="onAvatarMouseDown"
         >
-          <img class="resume-avatar-img" :src="settings.avatar" alt="证件照" draggable="false" />
+          <img
+            class="resume-avatar-img"
+            :src="settings.avatar"
+            :style="avatarImgStyle"
+            alt="证件照"
+            draggable="false"
+          />
           <!-- 选中态：边框 + 八个圆形缩放手柄 + 中心点；导出截图忽略此层 -->
           <div v-if="avatarSelected" class="avatar-selection" data-html2canvas-ignore="true">
             <span
@@ -253,18 +289,42 @@ defineExpose({
             <span class="avatar-center"></span>
           </div>
         </div>
+        </div>
       </div>
     </div>
+
+    <!-- 底部状态栏：页数 + 字数 -->
+    <div class="preview-status">共 {{ stats.pages }} 页 · {{ stats.chars }} 字</div>
   </section>
 </template>
 
 <style scoped>
 .preview-pane {
   height: 100%;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
   background: #e9ebee;
+  box-sizing: border-box;
+  overflow: hidden; /* 兜底：自身不滚动，滚动交给内部 .pages-scroll */
+}
+/* 可滚动的纸张区域 */
+.pages-scroll {
+  flex: 1;
+  min-height: 0; /* 关键：flex 列里允许收缩，才能在固定高度内部滚动，
+                    否则会被内容撑高、把最外层撑出整页滚动条 */
+  overflow: auto;
   padding: 24px;
   box-sizing: border-box;
+}
+/* 底部状态栏：页数 / 字数 */
+.preview-status {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  background: #f3f4f6;
+  border-top: 1px solid #e2e5e9;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
 }
 .pages {
   display: flex;
@@ -299,10 +359,11 @@ defineExpose({
 .resume-avatar-img {
   width: 100%;
   height: 100%;
+  box-sizing: border-box; /* 描边计入尺寸，不撑大容器 */
   object-fit: cover;
-  border-radius: 4px;
   display: block;
   pointer-events: none; /* 交互交给外层 div，避免图片拦截 */
+  /* border-radius / border 由内联 avatarImgStyle 控制（随形状/描边设置） */
 }
 .resume-avatar:hover .resume-avatar-img {
   box-shadow: 0 0 0 2px rgba(47, 109, 246, 0.35);

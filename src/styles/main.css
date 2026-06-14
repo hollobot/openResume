@@ -8,6 +8,7 @@ html,
 body,
 #app {
   height: 100%;
+  overflow: hidden; /* 应用为单屏布局，滚动只发生在内部各区域，最外层不出现滚动条 */
 }
 
 body {

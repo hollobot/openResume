@@ -3,10 +3,10 @@
  * 演示编辑器支持的自定义语法：图标、右对齐、区块标题。
  * 证件照不写在 Markdown 里——在「设置」上传后，可在右侧预览自由拖动。
  */
-export const SAMPLE_MARKDOWN = `# 陶涛
+export const SAMPLE_MARKDOWN = `# 张三
 
-icon:phone 13800000000 &nbsp;&nbsp; icon:email taotao@example.com
-icon:github github.com/taotao &nbsp;&nbsp; icon:link taotao.github.io
+icon:phone 13800000000 &nbsp;&nbsp; icon:email zhangsan@example.com
+icon:github github.com/zhangsan &nbsp;&nbsp; icon:link zhangsan.github.io
 
 ## 教育经历
 

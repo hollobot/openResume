@@ -42,6 +42,15 @@ export function paginate(html, opts) {
   let pageTop = blocks[0].offsetTop // 当前页起始基线
 
   for (const block of blocks) {
+    // 手动分页标记（<div class="page-break">）：强制另起一页，标记本身不输出
+    if (block.classList && block.classList.contains('page-break')) {
+      if (current.length) {
+        pages.push(current.join('\n'))
+        current = []
+      }
+      pageTop = block.offsetTop // 后续内容从此基线起算
+      continue
+    }
     const blockBottom = block.offsetTop + block.offsetHeight
     // 当前页已有内容、且加入该块会超出页高 -> 从该块起新开一页
     if (current.length && blockBottom - pageTop > contentHeight) {
