@@ -8,6 +8,8 @@ import Toolbar from './components/Toolbar.vue'
 import EditorPane from './components/EditorPane.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
+import IconPicker from './components/IconPicker.vue'
+import ThemeColorPicker from './components/ThemeColorPicker.vue'
 import Toast from './components/Toast.vue'
 import { useResume } from './composables/useResume.js'
 import { useToast } from './composables/useToast.js'
@@ -26,6 +28,10 @@ const { show } = useToast()
 const previewRef = ref(null)
 // 设置面板开关
 const settingsOpen = ref(false)
+// 图标选择器开关
+const iconsOpen = ref(false)
+// 主题色取色面板开关
+const themeOpen = ref(false)
 
 function getPages() {
   return previewRef.value ? previewRef.value.getPages() : []
@@ -105,6 +111,8 @@ function onReset() {
     <Toolbar
       @save="onSave"
       @open-settings="settingsOpen = true"
+      @open-icons="iconsOpen = true"
+      @open-theme="themeOpen = true"
       @import-file="onImportFile"
       @export-pdf="onExportPdf"
       @export-png="onExportPng"
@@ -122,6 +130,8 @@ function onReset() {
     </main>
 
     <SettingsPanel :open="settingsOpen" @close="settingsOpen = false" />
+    <IconPicker :open="iconsOpen" @close="iconsOpen = false" />
+    <ThemeColorPicker :open="themeOpen" @close="themeOpen = false" />
     <Toast />
   </div>
 </template>

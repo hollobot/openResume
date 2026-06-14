@@ -10,6 +10,7 @@
   --rt-ink: #1a1a1a; /* 主文字（近黑） */
   --rt-ink-sub: #333333; /* 次要文字：联系方式 / 日期（仍为黑系） */
   --rt-border: #e3e6eb; /* 分隔线 */
+  --rt-accent: var(--rt-ink); /* 主题色（仅区块标题）；默认同主文字色（黑），由设置注入覆盖 */
 
   /* 页边距由 .page 提供，这里不再设 padding */
   color: var(--rt-ink);
@@ -49,8 +50,8 @@
   text-align: right;
 }
 .resume-theme-default .md-col--right img {
-  width: 92px;
-  height: 122px;
+  width: 90px;
+  height: 120px; /* 证件照 3:4 比例 */
   object-fit: cover;
   border-radius: 4px;
 }
@@ -66,10 +67,10 @@
 .resume-theme-default h2 {
   font-size: 16px;
   font-weight: 700;
-  color: var(--rt-ink);
+  color: var(--rt-accent); /* 区块标题用主题色（默认黑） */
   padding: 0 0 7px 0;
   margin: 22px 0 12px;
-  border-bottom: 2px solid var(--rt-ink);
+  border-bottom: 2px solid var(--rt-accent);
 }
 
 /* 三级标题（更细层级时使用） */
@@ -88,10 +89,13 @@
 .resume-theme-default ul,
 .resume-theme-default ol {
   margin: 6px 0;
-  padding-left: 18px;
 }
 .resume-theme-default ul {
   list-style: none; /* 自定义更精致的小圆点项目符号 */
+  padding-left: 6px; /* 圆点与区块左边缘对齐，避免过大的左缩进 */
+}
+.resume-theme-default ol {
+  padding-left: 18px; /* 有序列表给数字编号留出空间 */
 }
 .resume-theme-default ul > li {
   position: relative;
@@ -101,15 +105,25 @@
   content: '';
   position: absolute;
   left: 0;
-  /* 按行高把圆点垂直居中到首行（随行距自适应，不写死） */
-  top: calc(0.5lh - 2px);
-  width: 4px;
-  height: 4px;
+  /* 按行高把圆点对齐到首行：0.5lh 为行框几何中心，再下移约 1.5px
+     贴合文字视觉重心（纯几何居中会显得偏上） */
+  top: calc(0.5lh - 0.5px);
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--rt-ink);
 }
 .resume-theme-default li {
   margin: 4px 0;
+}
+/* 松散列表：li 内的 <p> 不再额外撑开上下边距，
+   否则首行文字被下推、与按行高定位的圆点错位 */
+.resume-theme-default li > p {
+  margin: 0;
+}
+/* 同一 li 内的多段之间仍保留间距 */
+.resume-theme-default li > p + p {
+  margin-top: 5px;
 }
 
 .resume-theme-default strong {
@@ -117,10 +131,30 @@
   color: var(--rt-ink);
 }
 
-/* 链接：单色无下划线，融入正文（简约） */
+/* 行内代码（`xxx`）渲染为技能胶囊标签：浅灰底、圆角、内边距，
+   适合罗列技术栈。用 :not(pre) 排除代码块，仅作用于行内代码。 */
+.resume-theme-default :not(pre) > code {
+  display: inline-block;
+  /* line-height:1 + 上下对称 padding 决定胶囊高度：
+     避免 line-height 的半行距——html2canvas 渲染带行距的文字会上偏，
+     导致导出 PDF 里文字不居中；收紧行距后预览与导出一致、文字垂直居中。 */
+  line-height: 1;
+  padding: 4px 8px;
+  margin: 2px 3px 2px 0;
+  font-family: inherit; /* 用正文字体，标签观感（非等宽代码风） */
+  font-size: 12.5px;
+  text-align: center; /* 文字水平居中 */
+  vertical-align: middle; /* 胶囊整体与前后文字垂直居中对齐 */
+  color: var(--rt-ink-sub);
+  background: #f1f2f4;
+  border-radius: 4px;
+}
+
+/* 链接：单色无下划线，融入正文（简约）；悬停显示手型光标 */
 .resume-theme-default a {
   color: var(--rt-ink);
   text-decoration: none;
+  cursor: pointer;
 }
 
 /* ===== 行内自定义元素 ===== */

@@ -8,6 +8,7 @@
  */
 import { ref } from 'vue'
 import { useResume } from '../composables/useResume.js'
+import AvatarCropper from './AvatarCropper.vue'
 
 defineProps({
   open: { type: Boolean, default: false }
@@ -16,59 +17,35 @@ const emit = defineEmits(['close'])
 
 const { settings, resetSettings, resetAvatarPos } = useResume()
 
-// 证件照显示尺寸（与预览一致）；裁剪输出用 2 倍分辨率保证清晰
-const AVATAR_W = 92
-const AVATAR_H = 122
-
 const avatarInput = ref(null)
 function triggerAvatar() {
   avatarInput.value && avatarInput.value.click()
 }
 
-/**
- * 把上传图片按证件照比例「裁剪填充」（cover）后输出 dataURL。
- * 这样存下来的图本身就是 92:122 比例，预览与导出（html2canvas 不支持 object-fit）都不会变形。
- */
-function cropToAvatar(dataUrl) {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => {
-      const ratio = AVATAR_W / AVATAR_H
-      const canvas = document.createElement('canvas')
-      canvas.width = AVATAR_W * 2
-      canvas.height = AVATAR_H * 2
-      const ctx = canvas.getContext('2d')
-      // 以中心 cover 方式取源图区域
-      const srcRatio = img.width / img.height
-      let sw, sh, sx, sy
-      if (srcRatio > ratio) {
-        sh = img.height
-        sw = sh * ratio
-        sx = (img.width - sw) / 2
-        sy = 0
-      } else {
-        sw = img.width
-        sh = sw / ratio
-        sx = 0
-        sy = (img.height - sh) / 2
-      }
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
-      resolve(canvas.toDataURL('image/jpeg', 0.92))
-    }
-    img.onerror = () => resolve(dataUrl) // 解码失败则保留原图
-    img.src = dataUrl
-  })
-}
+// 裁剪弹窗：选好文件后弹出，让用户在固定比例窗口内拖动定位
+const cropperOpen = ref(false)
+const cropperSrc = ref('')
 
 function onAvatarChange(e) {
   const file = e.target.files && e.target.files[0]
   e.target.value = '' // 允许重复选择同一文件
   if (!file) return
   const reader = new FileReader()
-  reader.onload = async () => {
-    settings.avatar = await cropToAvatar(String(reader.result))
+  reader.onload = () => {
+    cropperSrc.value = String(reader.result) // 原图，交给裁剪弹窗
+    cropperOpen.value = true
   }
   reader.readAsDataURL(file)
+}
+// 裁剪确认：保存高分辨率裁剪结果（92:122 比例，导出清晰不变形）
+function onCropConfirm(dataUrl) {
+  settings.avatar = dataUrl
+  cropperOpen.value = false
+  cropperSrc.value = ''
+}
+function onCropCancel() {
+  cropperOpen.value = false
+  cropperSrc.value = ''
 }
 function clearAvatar() {
   settings.avatar = ''
@@ -77,6 +54,7 @@ function clearAvatar() {
 // 可选字体：值为 CSS font-family，标签为展示名
 const FONT_OPTIONS = [
   { label: '模板默认', value: '' },
+  { label: '苹方风格（思源黑体）', value: '"Noto Sans SC", sans-serif' },
   { label: '微软雅黑', value: '"Microsoft YaHei", sans-serif' },
   { label: '宋体', value: 'SimSun, "Songti SC", serif' },
   { label: '黑体', value: 'SimHei, "Heiti SC", sans-serif' },
@@ -123,8 +101,16 @@ const FONT_OPTIONS = [
             style="display: none"
             @change="onAvatarChange"
           />
-          <p class="field-hint">上传后可在右侧预览直接拖动照片到任意位置，导出 PNG / PDF 会一并贴上</p>
+          <p class="field-hint">上传后弹出裁剪窗口拖动定位；在右侧预览中点击照片选中后，可拖动移动、拖四角等比缩放，导出 PNG / PDF 会一并贴上</p>
         </div>
+
+        <!-- 证件照裁剪弹窗 -->
+        <AvatarCropper
+          :open="cropperOpen"
+          :src="cropperSrc"
+          @confirm="onCropConfirm"
+          @cancel="onCropCancel"
+        />
 
         <!-- 字体 -->
         <div class="field">
@@ -145,6 +131,32 @@ const FONT_OPTIONS = [
             min="1.2"
             max="2.4"
             step="0.05"
+            class="field-control"
+          />
+        </div>
+
+        <!-- 页边距·上下 -->
+        <div class="field">
+          <label class="field-label">页边距·上下：{{ settings.pagePadV }}px</label>
+          <input
+            v-model.number="settings.pagePadV"
+            type="range"
+            min="16"
+            max="96"
+            step="2"
+            class="field-control"
+          />
+        </div>
+
+        <!-- 页边距·左右 -->
+        <div class="field">
+          <label class="field-label">页边距·左右：{{ settings.pagePadH }}px</label>
+          <input
+            v-model.number="settings.pagePadH"
+            type="range"
+            min="16"
+            max="96"
+            step="2"
             class="field-control"
           />
         </div>

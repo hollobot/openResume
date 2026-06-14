@@ -10,10 +10,15 @@ import { markdown as markdownLang } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'
 import { useResume } from '../composables/useResume.js'
 
-const { markdown: content } = useResume()
+const { markdown: content, setEditorView } = useResume()
 
 // 编辑器扩展：基础套件 + Markdown 语言 + 长行自动换行
 const extensions = [basicSetup, markdownLang(), EditorView.lineWrapping]
+
+// 编辑器就绪后把 CodeMirror 实例交给共享状态，供图标选择器在光标处插入
+function onReady(payload) {
+  setEditorView(payload.view)
+}
 </script>
 
 <template>
@@ -26,6 +31,7 @@ const extensions = [basicSetup, markdownLang(), EditorView.lineWrapping]
       :tab-size="2"
       placeholder="在此输入 Markdown 内容…"
       class="editor-cm"
+      @ready="onReady"
     />
   </section>
 </template>

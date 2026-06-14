@@ -19,9 +19,13 @@ const DEFAULT_AVATAR_POS = { x: 650, y: 44 }
 const DEFAULT_SETTINGS = {
   fontFamily: '', // 空串表示使用模板默认字体
   lineHeight: 1.65, // 行距
+  themeColor: '', // 主题色（仅作用于区块标题）；空串表示用模板默认黑色
+  pagePadV: 48, // 页边距·上下（px）
+  pagePadH: 56, // 页边距·左右（px）
   customCss: '', // 自定义 CSS（作用于简历预览）
   avatar: '', // 证件照（base64 dataURL，空则不显示）
-  avatarPos: { ...DEFAULT_AVATAR_POS } // 证件照在简历上的固定位置（可自由拖动）
+  avatarPos: { ...DEFAULT_AVATAR_POS }, // 证件照在简历上的固定位置（可自由拖动）
+  avatarScale: 1 // 证件照缩放系数（相对基准 90×120，可在预览中等比缩放）
 }
 
 // 启动时读取本地草稿，没有则回填示例简历
@@ -47,6 +51,26 @@ function loadSettings() {
 // 模块级单例状态：所有组件共享同一份数据
 const markdown = ref(loadDraft())
 const settings = reactive(loadSettings())
+
+// 编辑器 CodeMirror 实例（EditorPane 就绪时注入），供图标选择器在光标处插入文本
+let editorView = null
+function setEditorView(view) {
+  editorView = view
+}
+// 在当前光标处插入文本（替换选区），并把光标移到插入内容之后
+function insertAtCursor(text) {
+  if (!editorView) {
+    // 编辑器未就绪时退化为追加到末尾，保证功能可用
+    markdown.value += text
+    return
+  }
+  const { from, to } = editorView.state.selection.main
+  editorView.dispatch({
+    changes: { from, to, insert: text },
+    selection: { anchor: from + text.length }
+  })
+  editorView.focus()
+}
 
 // 安全写入：localStorage 不可用 / 容量满时静默失败，不影响编辑
 function safeSet(key, value) {
@@ -119,6 +143,8 @@ export function useResume() {
     clear,
     saveNow,
     resetSettings,
-    resetAvatarPos
+    resetAvatarPos,
+    setEditorView,
+    insertAtCursor
   }
 }
