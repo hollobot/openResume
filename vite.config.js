@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 // Vite 基础配置：启用 Vue 单文件组件支持
 export default defineConfig({
   plugins: [vue()],
-  base: process.env.REPO_BASE ? "/openResume/" : "/",
+  base: process.env.GITHUB_ACTIONS ? "/openResume/" : "/",
   resolve: {
     alias: {
       // @tabler/icons 的 package exports 把根目录的 nodes JSON 屏蔽了，
