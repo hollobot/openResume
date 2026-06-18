@@ -6,7 +6,7 @@
 export const SAMPLE_MARKDOWN = `# 张三
 
 icon:phone 13800000000 &nbsp;&nbsp; icon:email zhangsan@example.com
-icon:github github.com/zhangsan &nbsp;&nbsp; icon:link zhangsan.github.io
+[icon:github https://github.com/hollobot](https://github.com/hollobot)&nbsp;&nbsp;&nbsp; [icon:world https://hollobot.github.io/blog](https://hollobot.github.io/blog/)
 
 ## 教育经历
 
@@ -33,4 +33,4 @@ icon:github github.com/zhangsan &nbsp;&nbsp; icon:link zhangsan.github.io
 
 - 基于 Vue3 + Vite 实现的纯前端简历工具，支持实时预览与多格式导入导出。
 - 自定义 markdown-it 插件实现分栏、图标、右对齐等简历专属语法。
-`
+`;
