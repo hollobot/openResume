@@ -14,26 +14,36 @@
  * @param {number} [opts.lineHeight] 行距（与预览一致）
  * @returns {string[]} 每页的 HTML 字符串数组（至少一页）
  */
+// 常驻离屏测量容器（模块级单例）：分页是高频操作（输入时反复触发），
+// 复用同一个容器避免每次 create/append/remove DOM 的开销，只更新尺寸/样式/内容。
+let measureEl = null
+function getMeasure() {
+  if (!measureEl) {
+    measureEl = document.createElement('div')
+    measureEl.style.position = 'absolute'
+    measureEl.style.left = '-99999px'
+    measureEl.style.top = '0'
+    document.body.appendChild(measureEl)
+  }
+  return measureEl
+}
+
 export function paginate(html, opts) {
   const { contentWidth, contentHeight, themeClass, fontFamily, lineHeight } = opts
 
-  // 离屏测量容器：与真实页面内容区同宽、同主题/字体
-  const measure = document.createElement('div')
+  // 复用离屏测量容器：与真实页面内容区同宽、同主题/字体
+  const measure = getMeasure()
   measure.className = themeClass
-  measure.style.position = 'absolute'
-  measure.style.left = '-99999px'
-  measure.style.top = '0'
   measure.style.width = contentWidth + 'px'
-  if (fontFamily) measure.style.fontFamily = fontFamily
-  if (lineHeight) measure.style.lineHeight = String(lineHeight)
+  measure.style.fontFamily = fontFamily || ''
+  measure.style.lineHeight = lineHeight ? String(lineHeight) : ''
   measure.innerHTML = html
-  document.body.appendChild(measure)
 
   const blocks = Array.from(measure.children)
 
   // 空内容时也返回一页（空白页），保证预览始终有页面
   if (blocks.length === 0) {
-    document.body.removeChild(measure)
+    measure.innerHTML = '' // 释放，不再保留 DOM
     return ['']
   }
 
@@ -62,6 +72,6 @@ export function paginate(html, opts) {
   }
   if (current.length) pages.push(current.join('\n'))
 
-  document.body.removeChild(measure)
+  measure.innerHTML = '' // 测量完成后清空，释放大段 DOM，容器本身留作下次复用
   return pages
 }

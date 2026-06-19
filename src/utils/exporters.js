@@ -45,6 +45,12 @@ export function exportJSON(text, filename = 'resume.json') {
  * 用 background-size 还原 cover/contain 效果，使导出与预览一致。
  */
 function fixObjectFitImages(clonedDoc) {
+  // 预览里 .page 用了 content-visibility:auto（屏幕外跳过渲染以保证滚动流畅），
+  // 截图时强制还原为 visible，否则屏幕外的页会被跳过、导出成空白。
+  clonedDoc.querySelectorAll('.page').forEach((el) => {
+    el.style.contentVisibility = 'visible'
+  })
+
   const view = clonedDoc.defaultView || window
   clonedDoc.querySelectorAll('img').forEach((img) => {
     const cs = view.getComputedStyle(img)

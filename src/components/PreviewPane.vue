@@ -5,7 +5,7 @@
  * - 证件照固定在第 1 页，可自由拖动（绝对定位，不受流式布局影响）。
  * - 对外暴露 getPages()，导出 PDF/PNG 时逐页截图。
  */
-import { computed, ref, watch, nextTick, onUnmounted } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useResume } from '../composables/useResume.js'
 import { renderMarkdown } from '../markdown/index.js'
 import { paginate } from '../utils/paginate.js'
@@ -78,6 +78,33 @@ function repaginate() {
     lineHeight: settings.lineHeight
   })
 }
+
+// 分页是主线程上较重的同步排版（离屏布局 + 逐块测量），不放在输入关键路径上。
+// 用 requestIdleCallback（降级 setTimeout）在浏览器空闲时执行，避免打字时阻塞按键。
+let idleId = null
+let idleIsTimeout = false
+function cancelPaginate() {
+  if (idleId == null) return
+  if (idleIsTimeout) clearTimeout(idleId)
+  else cancelIdleCallback(idleId)
+  idleId = null
+}
+function schedulePaginate() {
+  cancelPaginate()
+  const run = () => {
+    idleId = null
+    repaginate()
+  }
+  if (typeof requestIdleCallback === 'function') {
+    idleIsTimeout = false
+    // timeout 兜底：即使一直没有空闲，也保证 300ms 内完成分页
+    idleId = requestIdleCallback(run, { timeout: 300 })
+  } else {
+    idleIsTimeout = true
+    idleId = setTimeout(run, 60)
+  }
+}
+
 // 内容 / 字体 / 行距 / 模板 / 页边距 / 自定义 CSS 变化都会影响排版高度，需重新分页
 watch(
   [
@@ -89,7 +116,7 @@ watch(
     padV,
     padH
   ],
-  () => nextTick(repaginate),
+  schedulePaginate,
   { immediate: true }
 )
 
@@ -233,6 +260,7 @@ function onResizeEnd() {
 
 onUnmounted(() => {
   clearTimeout(renderTimer)
+  cancelPaginate()
   onDragEnd()
   onResizeEnd()
 })
@@ -342,6 +370,11 @@ defineExpose({
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   overflow: hidden; /* 超长单块兜底，避免溢出到页外 */
+  /* 滚动优化：屏幕外的页跳过布局/绘制，只渲染可视区附近的页，多页时滚动更丝滑。
+     页面尺寸固定，用 contain-intrinsic-size 给出等大占位，避免跳过时滚动条跳动。
+     （导出截图时在 html2canvas 的 onclone 里强制还原为 visible，防止截成空白。） */
+  content-visibility: auto;
+  contain-intrinsic-size: 794px 1123px;
 }
 .page-content {
   height: 100%;
